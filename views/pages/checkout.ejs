@@ -1,0 +1,130 @@
+<div id="app">
+  <section class="container-x pt-8 md:pt-14 pb-8 md:pb-12 flex flex-col-reverse md:flex-row md:items-end md:justify-between gap-6">
+    <div data-intro>
+      <p class="display-italic text-[22px] md:text-[26px] text-clay">Checkout</p>
+      <h1 class="font-serif font-medium text-[34px] md:text-[52px] mt-1 md:mt-3">填寫收件資訊</h1>
+    </div>
+    <div data-intro><%- include('../partials/stepper') %></div>
+  </section>
+
+  <div v-if="loading" class="container-x pb-32 grid lg:grid-cols-[740fr_460fr] gap-8 lg:gap-20">
+    <div class="h-[520px] rounded-2xl skeleton"></div><div class="h-[420px] rounded-2xl skeleton"></div>
+  </div>
+
+  <form v-else @submit.prevent="submitOrder" novalidate class="container-x pb-24 md:pb-36 grid lg:grid-cols-[740fr_460fr] gap-6 lg:gap-20 items-start">
+    <!-- Summary (top & collapsible on mobile, sticky sidebar on desktop) -->
+    <aside class="lg:order-2 lg:sticky lg:top-28 bg-linen rounded-2xl p-5 md:p-9" data-intro>
+      <button type="button" class="w-full flex items-center justify-between lg:cursor-default" @click="summaryOpen = !summaryOpen" :aria-expanded="summaryOpen">
+        <span class="flex items-center gap-2.5">
+          <svg class="lg:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
+          <span class="font-serif font-medium text-lg md:text-[22px]">訂單摘要</span>
+          <span class="text-[13px] text-ink-muted">{{ itemCount }} 件商品</span>
+        </span>
+        <span class="lg:hidden flex items-center gap-2 font-label font-bold text-sm">
+          NT$ {{ grandTotal.toLocaleString() }}
+          <svg :class="{ 'rotate-180': summaryOpen }" class="transition-transform duration-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+      </button>
+
+      <div class="acc-body lg:grid-rows-[1fr]" :style="summaryOpen ? 'grid-template-rows:1fr' : ''">
+        <div>
+          <ul class="mt-5 border-y border-line py-1.5">
+            <li v-for="item in cartItems" :key="item.id" class="flex items-center gap-4 py-3.5">
+              <div class="relative shrink-0">
+                <img :src="item.product.image_url || fallbackImage" :alt="item.product.name" class="w-16 h-20 rounded-md object-cover bg-paper">
+                <span class="absolute -top-2 -right-2 w-[22px] h-[22px] rounded-full bg-ink text-paper grid place-items-center font-label font-bold text-[10.5px]">{{ item.quantity }}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-serif font-medium truncate">{{ item.product.name }}</p>
+                <p class="font-label font-medium text-[12.5px] text-ink-muted mt-1">NT$ {{ item.product.price.toLocaleString() }} × {{ item.quantity }}</p>
+              </div>
+              <p class="font-label font-semibold text-[14.5px] whitespace-nowrap">NT$ {{ (item.product.price * item.quantity).toLocaleString() }}</p>
+            </li>
+          </ul>
+          <dl class="space-y-3 mt-5 text-sm">
+            <div class="flex justify-between"><dt class="text-ink-soft">商品小計</dt><dd class="font-label font-semibold">NT$ {{ cartTotal.toLocaleString() }}</dd></div>
+            <div class="flex justify-between"><dt class="text-ink-soft">運費</dt><dd class="font-label font-semibold" :class="freeShipping ? 'text-moss' : ''">{{ freeShipping ? '免運' : 'NT$ 150' }}</dd></div>
+          </dl>
+          <p v-if="freeShipping" class="flex items-center gap-2 bg-mint text-moss rounded-lg px-3.5 py-2.5 mt-5 text-[12.5px] font-medium">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>已達 NT$500 免運門檻
+          </p>
+          <p v-else class="bg-blush text-clay-dark rounded-lg px-3.5 py-2.5 mt-5 text-[12.5px] font-medium">再買 NT$ {{ (500 - cartTotal).toLocaleString() }} 即可享免運</p>
+        </div>
+      </div>
+
+      <div class="hidden lg:block">
+        <div class="flex justify-between items-baseline pt-5 mt-5 border-t border-line">
+          <span class="font-serif font-medium text-lg">總計</span>
+          <span><span class="font-label font-semibold text-[13px] text-ink-soft mr-1.5">NT$</span><span class="num text-[44px] leading-none" ref="totalEl">{{ grandTotal.toLocaleString() }}</span></span>
+        </div>
+        <button type="submit" :disabled="submitting" class="btn btn-ink w-full mt-6 h-14" data-magnetic>
+          <span v-if="submitting" class="w-4 h-4 rounded-full border-2 border-paper/40 border-t-paper animate-spin"></span>
+          {{ submitting ? '建立訂單中…' : '確認送出訂單' }}
+          <svg v-if="!submitting" class="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+        </button>
+        <p class="text-center text-[11.5px] text-ink-muted mt-4">送出即表示同意本站服務條款與退換貨政策</p>
+      </div>
+    </aside>
+
+    <!-- Form -->
+    <div class="lg:order-1 flex flex-col gap-6">
+      <div class="surface rounded-2xl p-5 md:p-12 flex flex-col gap-7 md:gap-9" data-intro>
+        <div class="flex items-start gap-4">
+          <span class="display-italic text-[30px] leading-none text-clay">01</span>
+          <div><h2 class="font-serif font-medium text-lg md:text-[22px]">收件資訊</h2><p class="text-[13.5px] text-ink-muted mt-1">我們會依此資訊配送花束並寄送訂單通知</p></div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5">
+          <div>
+            <label for="recipientName" class="field-label">收件人姓名</label>
+            <input id="recipientName" v-model="form.recipientName" type="text" autocomplete="name" placeholder="請輸入收件人姓名" class="field-input" :class="{ 'is-error': errors.recipientName }" :aria-invalid="!!errors.recipientName">
+            <p v-if="errors.recipientName" class="field-error">{{ errors.recipientName }}</p>
+          </div>
+          <div>
+            <label for="recipientEmail" class="field-label">Email</label>
+            <input id="recipientEmail" v-model="form.recipientEmail" type="email" autocomplete="email" placeholder="name@example.com" class="field-input" :class="{ 'is-error': errors.recipientEmail }" :aria-invalid="!!errors.recipientEmail">
+            <p v-if="errors.recipientEmail" class="field-error">{{ errors.recipientEmail }}</p>
+          </div>
+        </div>
+        <div>
+          <label for="recipientAddress" class="field-label">收件地址</label>
+          <input id="recipientAddress" v-model="form.recipientAddress" type="text" autocomplete="street-address" placeholder="縣市、區、路名與門牌號碼" class="field-input" :class="{ 'is-error': errors.recipientAddress }" :aria-invalid="!!errors.recipientAddress">
+          <p v-if="errors.recipientAddress" class="field-error">{{ errors.recipientAddress }}</p>
+        </div>
+
+        <hr class="border-line">
+
+        <div class="flex items-start gap-4">
+          <span class="display-italic text-[30px] leading-none text-clay">02</span>
+          <div><h2 class="font-serif font-medium text-lg md:text-[22px]">付款方式</h2><p class="text-[13.5px] text-ink-muted mt-1">所有交易皆透過綠界科技加密處理</p></div>
+        </div>
+        <div class="flex items-center gap-4 p-4 md:p-[22px] rounded-xl border-[1.5px] border-ink bg-white">
+          <span class="w-[22px] h-[22px] rounded-full border-[1.5px] border-ink grid place-items-center shrink-0"><span class="w-2.5 h-2.5 rounded-full bg-ink"></span></span>
+          <div class="flex-1">
+            <p class="font-medium">綠界 ECPay 線上付款</p>
+            <p class="text-[12.5px] text-ink-muted mt-0.5">信用卡・ATM 轉帳・超商代碼，送出後將前往綠界付款頁</p>
+          </div>
+          <svg class="hidden sm:block text-ink-soft" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+        </div>
+        <p class="flex items-center gap-2.5 bg-linen rounded-[10px] px-4 py-3.5 text-[12.5px] text-ink-soft">
+          <svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3E4A33" stroke-width="1.5"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          花漾生活不會儲存任何卡號資訊，付款完成後將自動返回訂單頁。
+        </p>
+      </div>
+
+      <!-- Mobile total + submit -->
+      <div class="lg:hidden flex flex-col gap-4">
+        <div class="flex justify-between items-baseline pt-4 border-t border-line">
+          <span class="font-serif font-medium text-[17px]">總計</span>
+          <span><span class="font-label font-semibold text-xs text-ink-soft mr-1">NT$</span><span class="num text-4xl">{{ grandTotal.toLocaleString() }}</span></span>
+        </div>
+        <button type="submit" :disabled="submitting" class="btn btn-ink w-full">
+          {{ submitting ? '建立訂單中…' : '確認送出訂單' }}
+          <svg v-if="!submitting" class="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+        </button>
+        <p class="flex items-center justify-center gap-2 text-xs text-ink-muted">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3E4A33" stroke-width="1.5"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>由綠界科技加密處理
+        </p>
+      </div>
+    </div>
+  </form>
+</div>

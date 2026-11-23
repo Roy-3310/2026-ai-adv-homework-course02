@@ -1,0 +1,176 @@
+<div id="app">
+  <!-- ============ HERO ============ -->
+  <section class="container-x pt-10 md:pt-16 pb-20 md:pb-28 grid lg:grid-cols-[minmax(0,560px)_1fr] gap-12 lg:gap-20 items-center">
+    <div>
+      <p class="eyebrow" data-intro>Autumn Edit — 2026 秋季花藝</p>
+      <h1 class="font-serif font-medium text-[44px] leading-[1.22] sm:text-6xl lg:text-[80px] lg:leading-[1.22] tracking-[-0.01em] mt-7" data-intro>
+        讓花，<br>慢慢走進日常。
+      </h1>
+      <p class="text-ink-soft text-[15px] md:text-[17px] leading-[1.85] max-w-[470px] mt-7" data-intro>
+        每週一、四從產地直送當季花材，由駐店花藝師親手配置。不追求繁複，只想把一束剛剛好的美，送到你的桌上。
+      </p>
+      <div class="flex flex-wrap items-center gap-7 mt-9" data-intro>
+        <a href="#products" class="btn btn-ink max-sm:w-full" data-magnetic>
+          選購本季花束
+          <svg class="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+        </a>
+        <a href="#story" class="link-underline font-medium max-sm:hidden">閱讀品牌故事</a>
+      </div>
+      <dl class="grid grid-cols-3 gap-6 sm:gap-14 mt-12 pt-8 border-t border-line max-w-[480px]" data-intro>
+        <div><dt class="num text-4xl md:text-[44px] leading-none">2020</dt><dd class="text-[13px] text-ink-muted mt-2">創立於台北</dd></div>
+        <div><dt class="num text-4xl md:text-[44px] leading-none">4.9</dt><dd class="text-[13px] text-ink-muted mt-2">顧客平均評分</dd></div>
+        <div><dt class="num text-4xl md:text-[44px] leading-none">24h</dt><dd class="text-[13px] text-ink-muted mt-2">市區當日配送</dd></div>
+      </dl>
+    </div>
+
+    <!-- Hero art: arch window + round inset + floating tag + rotating season badge -->
+    <div class="relative mx-auto w-full max-w-[640px] aspect-[640/700]" data-intro>
+      <div class="absolute right-0 top-0 w-[78%] h-full arch bg-linen overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1000&q=80" alt="當季花束" class="absolute left-0 -top-[8%] w-full h-[116%] object-cover" data-parallax="14">
+      </div>
+      <div class="absolute left-0 bottom-[3%] w-[34%] aspect-square rounded-full overflow-hidden border-[10px] border-paper bg-linen">
+        <img src="https://images.unsplash.com/photo-1565279445322-30ab5314ff94?w=500&q=80" alt="粉色玫瑰特寫" class="w-full h-full object-cover">
+      </div>
+      <div class="absolute right-[-2%] sm:right-[-4%] top-[14%] bg-card rounded-2xl px-5 py-4 shadow-[0_24px_60px_-24px_rgba(30,38,32,.35)] hidden sm:block">
+        <p class="font-label font-bold text-[10.5px] tracking-[0.2em] text-clay">本週到貨</p>
+        <p class="display-italic text-[22px] mt-1">Paeonia lactiflora</p>
+        <p class="text-xs text-ink-soft mt-0.5">法國白芍藥 · 限量 40 束</p>
+      </div>
+      <div class="absolute left-[8%] top-[9%] w-[18%] min-w-[84px] aspect-square">
+        <svg viewBox="0 0 120 120" class="absolute inset-0 w-full h-full spin-slow" aria-hidden="true">
+          <defs><path id="ring" d="M60 60 m-46 0 a46 46 0 1 1 92 0 a46 46 0 1 1 -92 0"/></defs>
+          <circle cx="60" cy="60" r="60" fill="#A8443A"/>
+          <text font-family="Manrope" font-weight="700" font-size="9.5" letter-spacing="3.2" fill="#F5F0E8"><textPath href="#ring">FLOWER LIFE · AUTUMN EDIT · 2026 ·</textPath></text>
+        </svg>
+        <span class="absolute inset-0 grid place-items-center display-italic text-paper text-lg md:text-2xl">Fall</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MARQUEE ============ -->
+  <div class="bg-ink text-paper py-4 md:py-6 marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <template v-for="n in 2" :key="n">
+        <span v-for="w in marqueeWords" :key="w + n" class="flex items-center gap-9 pr-9 display-italic text-[26px] md:text-[34px] whitespace-nowrap">{{ w }}<span class="text-gold text-xs not-italic">✦</span></span>
+      </template>
+    </div>
+  </div>
+
+  <!-- ============ COLLECTION ============ -->
+  <section id="products" class="container-x py-20 md:py-28 scroll-mt-24">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-12 md:mb-14" data-reveal>
+      <div>
+        <p class="eyebrow">01 — The Collection</p>
+        <h2 class="font-serif font-medium text-[32px] md:text-[52px] mt-4">本季精選花藝</h2>
+      </div>
+      <div class="md:text-right">
+        <p class="font-serif text-xl" v-if="!loading">共 <span class="num text-2xl">{{ pagination.total }}</span> 件作品</p>
+        <p class="text-[13px] text-ink-muted mt-1">庫存每日更新・下單後 24 小時內出貨</p>
+      </div>
+    </div>
+
+    <!-- Skeleton -->
+    <div v-if="loading" class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-10 md:gap-x-8 md:gap-y-16">
+      <div v-for="n in 6" :key="n">
+        <div class="aspect-[4/5] rounded-md skeleton"></div>
+        <div class="h-4 w-2/3 mt-5 rounded skeleton"></div>
+        <div class="h-3 w-1/3 mt-3 rounded skeleton"></div>
+      </div>
+    </div>
+
+    <template v-else>
+      <div v-if="products.length === 0" class="text-center py-20">
+        <div class="w-40 h-52 arch bg-linen mx-auto mb-8 grid place-items-center display-italic text-3xl text-ink-muted">soon</div>
+        <p class="font-serif text-xl">目前沒有商品</p>
+        <p class="text-ink-muted text-sm mt-2">花藝師正在準備新作品，請稍後再來看看</p>
+      </div>
+
+      <div v-else class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-10 md:gap-x-8 md:gap-y-16">
+        <article
+          v-for="(product, idx) in products"
+          :key="product.id"
+          class="group cursor-pointer"
+          data-reveal
+          @click="goToProduct(product.id)"
+        >
+          <div class="relative aspect-[4/5] rounded-md overflow-hidden bg-linen zoom-media">
+            <img :src="product.image_url || fallbackImage" :alt="product.name" loading="lazy" class="w-full h-full object-cover" :class="{ 'grayscale opacity-60': product.stock <= 0 }">
+            <span class="absolute left-3 top-3 md:left-4 md:top-4 bg-paper rounded-full px-2.5 py-1 font-label font-bold text-[10px] md:text-[10.5px] tracking-[0.14em]">No.{{ String((pagination.page - 1) * pagination.limit + idx + 1).padStart(2, '0') }}</span>
+            <span v-if="product.stock > 0 && product.stock <= 20" class="absolute right-3 top-3 md:right-4 md:top-4 bg-clay text-paper rounded-full px-2.5 py-1 text-[10.5px] md:text-[11px] font-medium">僅剩 {{ product.stock }} 件</span>
+            <span v-if="product.stock <= 0" class="absolute right-3 top-3 md:right-4 md:top-4 bg-ink text-paper rounded-full px-2.5 py-1 text-[11px] font-medium">已售完</span>
+            <button
+              type="button"
+              @click.stop="addToCart(product, $event)"
+              :disabled="product._adding || product.stock <= 0"
+              class="absolute right-3 bottom-3 md:right-4 md:bottom-4 w-10 h-10 md:w-12 md:h-12 rounded-full bg-ink text-paper grid place-items-center transition-all duration-500 ease-[cubic-bezier(.22,1,.36,1)] hover:bg-clay hover:rotate-90 disabled:opacity-40 disabled:hover:rotate-0 disabled:hover:bg-ink md:translate-y-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 focus-visible:opacity-100"
+              :aria-label="'將 ' + product.name + ' 加入購物車'"
+            >
+              <span v-if="product._adding" class="w-4 h-4 rounded-full border-2 border-paper/40 border-t-paper animate-spin"></span>
+              <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-1 md:gap-4 mt-4 md:mt-5">
+            <div class="min-w-0">
+              <h3 class="font-serif font-medium text-[15px] md:text-xl truncate group-hover:text-clay transition-colors">{{ product.name }}</h3>
+              <p class="text-[13px] text-ink-muted mt-1 truncate hidden md:block">{{ shortDesc(product.description) }}</p>
+            </div>
+            <p class="whitespace-nowrap"><span class="font-label font-semibold text-[10px] md:text-[11px] text-ink-soft mr-1">NT$</span><span class="num text-[22px] md:text-[28px] leading-none">{{ product.price.toLocaleString() }}</span></p>
+          </div>
+        </article>
+      </div>
+
+      <nav v-if="pagination.totalPages > 1" class="flex justify-center items-center gap-2 mt-16" aria-label="分頁">
+        <button
+          v-for="p in pagination.totalPages"
+          :key="p"
+          @click="loadProducts(p)"
+          class="w-11 h-11 rounded-full font-label font-semibold text-sm transition-colors"
+          :class="p === pagination.page ? 'bg-ink text-paper' : 'border border-line hover:border-ink'"
+        >{{ p }}</button>
+      </nav>
+    </template>
+  </section>
+
+  <!-- ============ STORY ============ -->
+  <section id="story" class="bg-moss text-paper grid lg:grid-cols-[680fr_760fr] scroll-mt-20 overflow-hidden">
+    <div class="relative min-h-[320px] lg:min-h-[600px] overflow-hidden">
+      <img src="https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=1200&q=80" alt="繽紛玫瑰花材" loading="lazy" class="absolute left-0 -top-[10%] w-full h-[120%] object-cover" data-parallax="16">
+    </div>
+    <div class="px-6 py-16 md:p-[88px] flex flex-col justify-center gap-7" data-reveal>
+      <p class="eyebrow !text-gold">02 — Our Story</p>
+      <h2 class="font-serif font-medium text-[34px] md:text-[46px] leading-[1.4]">專心，<br>做好一束花的感動。</h2>
+      <p class="text-paper/80 leading-[1.9] max-w-[520px]">花漾生活成立於 2020 年。我們相信每一朵花都有自己的故事——從清晨的花市挑選、修剪、醒花，到一層層包紮，都由花藝師親手完成。</p>
+      <p class="display-italic text-2xl md:text-[28px] max-w-[560px]">“Every bouquet is a letter, written in petals.”</p>
+      <p class="text-[13px] text-gold tracking-[0.08em]">— 花漾生活工作室</p>
+    </div>
+  </section>
+
+  <!-- ============ REVIEWS ============ -->
+  <section class="container-x pt-20 md:pt-28 pb-16 md:pb-24">
+    <div data-reveal>
+      <p class="eyebrow">03 — Kind Words</p>
+      <h2 class="font-serif font-medium text-[30px] md:text-[44px] mt-4 mb-10 md:mb-12">收到花的人，這樣說</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-5 md:gap-8">
+      <figure v-for="r in reviews" :key="r.name" class="surface rounded-md p-7 md:p-9 flex flex-col gap-7 transition-transform duration-700 ease-[cubic-bezier(.22,1,.36,1)] hover:-translate-y-1.5" data-reveal>
+        <p class="text-gold tracking-[0.2em] text-sm" aria-label="五顆星">★★★★★</p>
+        <blockquote class="font-serif text-lg leading-[1.75] flex-1">「{{ r.quote }}」</blockquote>
+        <figcaption class="flex justify-between pt-5 border-t border-line text-[13px]">
+          <span class="font-medium">{{ r.name }}</span><span class="text-ink-muted text-xs">購買・{{ r.item }}</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ SERVICES ============ -->
+  <section id="services" class="container-x pb-20 md:pb-28 scroll-mt-24">
+    <div class="grid md:grid-cols-3 border-y border-line divide-y md:divide-y-0 md:divide-x divide-line" data-reveal>
+      <div v-for="s in services" :key="s.title" class="flex items-center gap-5 px-2 md:px-8 py-8 md:py-10 group">
+        <span class="w-16 h-16 rounded-full bg-linen grid place-items-center text-moss shrink-0 transition-transform duration-700 ease-[cubic-bezier(.34,1.56,.64,1)] group-hover:-rotate-12 group-hover:scale-110">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" v-html="s.icon"></svg>
+        </span>
+        <div><h3 class="font-serif font-medium text-[19px]">{{ s.title }}</h3><p class="text-[13px] text-ink-muted mt-1">{{ s.desc }}</p></div>
+      </div>
+    </div>
+  </section>
+</div>

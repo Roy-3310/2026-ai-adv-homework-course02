@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canvas starter</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #stage { display: block; width: 100vw; height: 100vh; touch-action: none; }
+  #pause {
+    position: fixed; bottom: 16px; right: 16px; padding: 8px 14px;
+    font: 14px system-ui, sans-serif; color: #fff; background: rgb(255 255 255 / 0.12);
+    border: 1px solid rgb(255 255 255 / 0.3); border-radius: 999px; cursor: pointer;
+  }
+  #pause:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<!-- Starter: fixed-timestep loop + interpolation, DPR sizing, pointer input,
+     off-screen/hidden pause, reduced motion, pause button, capped particles.
+     Hold/drag to spawn particles; double-click (or double-tap) to add a repelling field.
+     Replace the WORLD section with your own simulation. -->
+<canvas id="stage" aria-hidden="true"></canvas>
+<button id="pause" type="button" aria-pressed="false">Pause animation</button>
+
+<script>
+"use strict";
+
+/* ---------- math ---------- */
+class Vec2 {
+  constructor(x = 0, y = 0) { this.x = x; this.y = y; }
+  set(x, y) { this.x = x; this.y = y; return this; }
+  copy(v) { this.x = v.x; this.y = v.y; return this; }
+  clone() { return new Vec2(this.x, this.y); }
+  add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
+  sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
+  mul(s) { return new Vec2(this.x * s, this.y * s); }
+  addSelf(v) { this.x += v.x; this.y += v.y; return this; }
+  scaleSelf(s) { this.x *= s; this.y *= s; return this; }
+  move(x, y) { this.x += x; this.y += y; return this; }
+  get length() { return Math.hypot(this.x, this.y); }
+  get angle() { return Math.atan2(this.y, this.x); }
+  get unit() { const l = this.length; return l > 1e-9 ? this.mul(1 / l) : new Vec2(); }
+}
+
+/* ---------- canvas + sizing ---------- */
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+let ww = 0, wh = 0;
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  ww = canvas.clientWidth;
+  wh = canvas.clientHeight;
+  canvas.width = Math.round(ww * dpr);
+  canvas.height = Math.round(wh * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+new ResizeObserver(resize).observe(canvas);
+resize();
+
+/* ---------- input ---------- */
+const pointer = { p: new Vec2(-1e4, -1e4), down: false };
+function toCanvas(e) {
+  const r = canvas.getBoundingClientRect();
+  return new Vec2(e.clientX - r.left, e.clientY - r.top);
+}
+canvas.addEventListener("pointermove", (e) => pointer.p.copy(toCanvas(e)));
+canvas.addEventListener("pointerdown", (e) => {
+  pointer.down = true;
+  pointer.p.copy(toCanvas(e));
+  canvas.setPointerCapture(e.pointerId);
+});
+const release = () => { pointer.down = false; };
+canvas.addEventListener("pointerup", release);
+canvas.addEventListener("pointercancel", release);
+canvas.addEventListener("dblclick", (e) => fields.push(new ForceField({ p: toCanvas(e), strength: 60 })));
+
+/* ---------- WORLD (replace with your own) ---------- */
+const params = { gravity: 0.25, damping: 0.99, restitution: 0.75, fade: 0.985, perTick: 4, speed: 6 };
+const MAX_PARTICLES = 1500;
+let particles = [];
+const fields = [];
+
+class Particle {
+  constructor({ p, v, r, color }) {
+    this.p = p; this.prev = p.clone(); this.v = v; this.r = r; this.color = color;
+  }
+  update() {
+    this.prev.copy(this.p);
+    this.v.y += params.gravity;
+    this.v.scaleSelf(params.damping);
+    this.p.addSelf(this.v);
+    this.r *= params.fade;
+    if (this.p.x - this.r < 0)  { this.p.x = this.r;      this.v.x =  Math.abs(this.v.x) * params.restitution; }
+    if (this.p.x + this.r > ww) { this.p.x = ww - this.r; this.v.x = -Math.abs(this.v.x) * params.restitution; }
+    if (this.p.y - this.r < 0)  { this.p.y = this.r;      this.v.y =  Math.abs(this.v.y) * params.restitution; }
+    if (this.p.y + this.r > wh) { this.p.y = wh - this.r; this.v.y = -Math.abs(this.v.y) * params.restitution; }
+  }
+  get dead() { return this.r < 0.1; }
+  draw(ctx, alpha) {
+    ctx.beginPath();
+    ctx.arc(this.prev.x + (this.p.x - this.prev.x) * alpha,
+            this.prev.y + (this.p.y - this.prev.y) * alpha, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+}
+
+class ForceField {
+  constructor({ p, strength = -60, maxForce = 1.5 }) { Object.assign(this, { p, strength, maxForce }); }
+  affect(q) {
+    const dx = q.p.x - this.p.x, dy = q.p.y - this.p.y, d = Math.hypot(dx, dy);
+    if (d < 1e-6) return;
+    const f = Math.max(-this.maxForce, Math.min(this.maxForce, this.strength / (1 + d)));
+    q.v.x += (dx / d) * f;
+    q.v.y += (dy / d) * f;
+  }
+}
+
+function spawn(n) {
+  const room = MAX_PARTICLES - particles.length;
+  for (let i = 0; i < Math.min(n, room); i++) {
+    particles.push(new Particle({
+      p: pointer.p.clone(),
+      v: new Vec2((Math.random() - 0.5) * params.speed, (Math.random() - 0.5) * params.speed),
+      r: 4 + Math.random() * 22,
+      color: `hsl(${(Math.random() * 50 + 15) | 0} 95% 60%)`,
+    }));
+  }
+}
+
+function update() {
+  if (pointer.down) spawn(params.perTick);
+  for (const f of fields) for (const q of particles) f.affect(q);
+  for (const q of particles) q.update();
+  particles = particles.filter((q) => !q.dead);
+}
+
+function draw(alpha) {
+  ctx.fillStyle = reduced ? "#000" : "rgba(0,0,0,0.25)"; // trails only when motion is allowed
+  ctx.fillRect(0, 0, ww, wh);
+  for (const q of particles) q.draw(ctx, alpha);
+  ctx.strokeStyle = "rgb(255 255 255 / 0.35)";
+  for (const f of fields) { ctx.beginPath(); ctx.arc(f.p.x, f.p.y, 12, 0, Math.PI * 2); ctx.stroke(); }
+}
+
+/* ---------- reduced motion ---------- */
+const rmQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+let reduced = rmQuery.matches;
+rmQuery.addEventListener("change", (e) => { reduced = e.matches; });
+// In reduced mode this demo stays interactive (user-initiated motion) but drops trails.
+// For ambient, self-running pieces: draw one still frame and don't start the loop.
+
+/* ---------- loop: fixed timestep + interpolation ---------- */
+const TICK_HZ = 60, STEP = 1000 / TICK_HZ;
+let raf = 0, last = 0, acc = 0, running = false, paused = false, visible = true;
+
+function frame(now) {
+  acc += Math.min(now - last, 250);
+  last = now;
+  if (!paused) {
+    while (acc >= STEP) { update(); acc -= STEP; }
+  } else acc = 0;
+  draw(paused ? 1 : acc / STEP);
+  raf = requestAnimationFrame(frame);
+}
+function start() {
+  if (running) return;
+  running = true; last = performance.now(); acc = 0;
+  raf = requestAnimationFrame(frame);
+}
+function stop() { running = false; cancelAnimationFrame(raf); }
+
+// pause when scrolled off-screen (rAF already pauses in hidden tabs)
+new IntersectionObserver(([entry]) => {
+  visible = entry.isIntersecting;
+  visible ? start() : stop();
+}).observe(canvas);
+
+const pauseBtn = document.getElementById("pause");
+pauseBtn.addEventListener("click", () => {
+  paused = !paused;
+  pauseBtn.setAttribute("aria-pressed", String(paused));
+  pauseBtn.textContent = paused ? "Play animation" : "Pause animation";
+});
+
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<div id="app" data-product-id="<%= productId %>">
+  <!-- Loading -->
+  <div v-if="loading" class="container-x pt-8 pb-24 grid lg:grid-cols-[660fr_520fr] gap-10 lg:gap-[100px]">
+    <div class="aspect-[660/800] arch skeleton"></div>
+    <div class="space-y-5 pt-6">
+      <div class="h-3 w-32 rounded skeleton"></div><div class="h-12 w-3/4 rounded skeleton"></div>
+      <div class="h-16 w-full rounded skeleton"></div><div class="h-32 w-full rounded skeleton"></div>
+    </div>
+  </div>
+
+  <!-- Not found -->
+  <div v-else-if="notFound" class="container-x py-24 text-center">
+    <div class="w-40 h-52 arch bg-linen mx-auto mb-8 grid place-items-center display-italic text-3xl text-ink-muted">404</div>
+    <h1 class="font-serif text-2xl mb-3">找不到此商品</h1>
+    <p class="text-ink-muted text-sm mb-8">它可能已經下架，或是網址有誤。</p>
+    <a href="/" class="btn btn-ink">回到首頁</a>
+  </div>
+
+  <template v-else-if="product">
+    <!-- Breadcrumb -->
+    <nav class="container-x pt-6 md:pt-7 pb-2 text-[13px] text-ink-muted flex items-center gap-2.5 overflow-hidden whitespace-nowrap" aria-label="麵包屑">
+      <a href="/" class="hover:text-ink">首頁</a><span class="text-line">/</span>
+      <a href="/#products" class="hover:text-ink">所有花藝</a><span class="text-line">/</span>
+      <span class="text-ink truncate">{{ product.name }}</span>
+    </nav>
+
+    <section class="container-x pt-4 md:pt-6 pb-28 lg:pb-[120px] grid lg:grid-cols-[660fr_520fr] gap-10 lg:gap-[100px] items-start">
+      <!-- Gallery -->
+      <div data-intro>
+        <div class="relative aspect-[660/800] arch bg-linen">
+          <img
+            :src="imageUrl"
+            :alt="product.name"
+            class="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(.22,1,.36,1)]"
+            :style="{ transform: 'scale(' + views[activeView].scale + ')', transformOrigin: views[activeView].origin }"
+          >
+          <span class="absolute left-5 md:left-6 bottom-5 md:bottom-6 bg-paper rounded-full px-3.5 py-2 flex gap-2 items-center">
+            <span class="font-label font-bold text-[11px] tracking-[0.14em]">{{ views[activeView].label }}</span>
+          </span>
+          <button type="button" @click="toggleFav" class="absolute right-5 md:right-6 bottom-5 md:bottom-6 w-12 h-12 md:w-[52px] md:h-[52px] rounded-full bg-paper grid place-items-center transition-transform duration-500 ease-[cubic-bezier(.34,1.56,.64,1)] active:scale-90" :aria-pressed="fav" aria-label="加入收藏">
+            <svg width="22" height="22" viewBox="0 0 24 24" :fill="fav ? '#A8443A' : 'none'" :stroke="fav ? '#A8443A' : 'currentColor'" stroke-width="1.5" stroke-linejoin="round" :class="{ 'badge-bump': fav }"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg>
+          </button>
+        </div>
+        <div class="flex gap-3 md:gap-4 mt-4 md:mt-5">
+          <button
+            v-for="(v, i) in views" :key="v.label" type="button" @click="activeView = i"
+            class="w-16 h-20 md:w-[84px] md:h-[104px] rounded overflow-hidden transition-all duration-300"
+            :class="activeView === i ? 'ring-[1.5px] ring-ink ring-offset-2 ring-offset-paper' : 'opacity-55 hover:opacity-100'"
+            :aria-label="'檢視：' + v.label"
+          >
+            <img :src="imageUrl" alt="" class="w-full h-full object-cover" :style="{ transform: 'scale(' + v.scale + ')', transformOrigin: v.origin }">
+          </button>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="lg:sticky lg:top-28 flex flex-col gap-7">
+        <div data-intro>
+          <p class="eyebrow">Bouquet · 花藝師手作</p>
+          <h1 class="font-serif font-medium text-[34px] md:text-5xl leading-[1.3] mt-4">{{ product.name }}</h1>
+          <p class="text-[13px] text-ink-muted mt-3">花藝師手工包紮・下單後 24 小時內出貨</p>
+        </div>
+
+        <div class="flex items-center justify-between py-5 md:py-6 border-y border-line" data-intro>
+          <p><span class="font-label font-semibold text-sm text-ink-soft mr-1.5">NT$</span><span class="num text-[40px] md:text-[52px] leading-none">{{ product.price.toLocaleString() }}</span></p>
+          <span v-if="product.stock > 0" class="pill pill-paid">{{ product.stock <= 20 ? '僅剩' : '現貨 · 尚有' }} {{ product.stock }} 件</span>
+          <span v-else class="pill pill-failed">已售完</span>
+        </div>
+
+        <p class="text-ink-soft text-[15.5px] leading-[1.95]" data-intro>{{ product.description }}</p>
+
+        <div class="hidden md:block" data-intro>
+          <p class="font-label font-bold text-[11px] tracking-[0.24em] text-ink-muted mb-3">數量</p>
+          <div class="flex items-center gap-3">
+            <div class="qty">
+              <button type="button" @click="decrease" :disabled="quantity <= 1" aria-label="減少數量"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+              <span class="w-11 text-center num text-2xl">{{ quantity }}</span>
+              <button type="button" @click="increase" :disabled="quantity >= product.stock" aria-label="增加數量"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            </div>
+            <button type="button" @click="addToCart" :disabled="adding || product.stock <= 0" class="btn btn-clay flex-1 h-[56px]" data-magnetic>
+              <span v-if="adding" class="w-4 h-4 rounded-full border-2 border-paper/40 border-t-paper animate-spin"></span>
+              <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
+              <template v-if="product.stock <= 0">已售完</template>
+              <template v-else>加入購物車 <span class="opacity-60">·</span> <span class="font-label font-semibold text-sm">NT$ {{ (product.price * quantity).toLocaleString() }}</span></template>
+            </button>
+          </div>
+        </div>
+
+        <ul class="flex flex-wrap gap-x-7 gap-y-3 bg-linen rounded-[10px] px-5 py-4 text-[13px] text-ink-soft" data-intro>
+          <li v-for="perk in perks" :key="perk.t" class="flex items-center gap-2.5">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3E4A33" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" v-html="perk.i"></svg>{{ perk.t }}
+          </li>
+        </ul>
+
+        <div data-intro>
+          <div v-for="(a, i) in accordions" :key="a.title" class="border-b border-line" :class="{ 'acc-open': openAcc === i }">
+            <button type="button" @click="openAcc = openAcc === i ? -1 : i" class="w-full flex items-center justify-between py-5 md:py-6 text-left" :aria-expanded="openAcc === i">
+              <span class="font-serif font-medium">{{ a.title }}</span>
+              <svg class="acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="acc-body"><div><ul class="pb-6 space-y-1.5 text-sm text-ink-soft leading-[1.85]"><li v-for="line in a.lines" :key="line">・{{ line }}</li></ul></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Related -->
+    <section v-if="related.length" class="bg-linen py-20 md:py-24">
+      <div class="container-x">
+        <div class="flex items-end justify-between mb-10 md:mb-11" data-reveal>
+          <div><p class="eyebrow">You may also like</p><h2 class="font-serif font-medium text-3xl md:text-[40px] mt-4">一起帶回家的花</h2></div>
+          <a href="/#products" class="hidden sm:flex items-center gap-2.5 text-sm font-medium link-underline">瀏覽全部</a>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-8">
+          <a v-for="r in related" :key="r.id" :href="'/products/' + r.id" class="group" data-reveal>
+            <div class="aspect-[296/360] rounded-md overflow-hidden bg-paper zoom-media"><img :src="r.image_url || fallbackImage" :alt="r.name" loading="lazy" class="w-full h-full object-cover"></div>
+            <div class="flex flex-col md:flex-row md:justify-between gap-1 mt-3.5">
+              <h3 class="font-serif font-medium text-[15px] md:text-[17px] group-hover:text-clay transition-colors">{{ r.name }}</h3>
+              <p class="num text-xl md:text-[22px]">{{ r.price.toLocaleString() }}</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mobile sticky buy bar (body gets bottom padding from product-detail.js) -->
+    <div class="md:hidden fixed inset-x-0 bottom-0 z-40 bg-card/95 backdrop-blur border-t border-line px-4 py-3 flex items-center gap-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+      <div class="qty qty-sm">
+        <button type="button" @click="decrease" :disabled="quantity <= 1" aria-label="減少數量"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+        <span class="w-6 text-center num text-xl">{{ quantity }}</span>
+        <button type="button" @click="increase" :disabled="quantity >= product.stock" aria-label="增加數量"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+      <button type="button" @click="addToCart" :disabled="adding || product.stock <= 0" class="btn btn-clay flex-1 h-[50px] text-[14.5px]">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
+        {{ product.stock <= 0 ? '已售完' : '加入購物車' }}
+      </button>
+    </div>
+  </template>
+</div>

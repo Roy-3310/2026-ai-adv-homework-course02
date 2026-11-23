@@ -1,0 +1,23 @@
+<%# Vue-driven checkout stepper. Requires `currentStep` (0–3) in the page's Vue scope. %>
+<ol class="hidden md:flex items-center gap-4" aria-label="結帳進度">
+  <template v-for="(s, i) in ['購物車', '收件資訊', '確認訂單', '付款完成']" :key="s">
+    <li class="flex items-center gap-2.5" :aria-current="i === currentStep ? 'step' : null">
+      <span class="w-[34px] h-[34px] rounded-full grid place-items-center transition-colors duration-500"
+        :class="i < currentStep || (i === 3 && currentStep === 3) ? 'bg-moss text-paper' : i === currentStep ? 'bg-ink text-paper' : 'border border-line text-ink-muted'">
+        <svg v-if="i < currentStep || (i === 3 && currentStep === 3)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+        <span v-else class="font-label font-bold text-[11px]">0{{ i + 1 }}</span>
+      </span>
+      <span class="text-sm" :class="i === currentStep ? 'font-bold' : i < currentStep ? '' : 'text-ink-muted'">{{ s }}</span>
+    </li>
+    <li v-if="i < 3" aria-hidden="true" class="w-10 lg:w-14 h-px transition-colors duration-700" :class="i < currentStep ? 'bg-moss' : 'bg-line'"></li>
+  </template>
+</ol>
+<div class="md:hidden">
+  <div class="flex justify-between items-center">
+    <span class="font-label font-bold text-[10.5px] tracking-[0.2em] text-clay">STEP 0{{ currentStep + 1 }} / 04</span>
+    <span class="text-[12.5px] font-medium">{{ ['購物車', '收件資訊', '確認訂單', '付款完成'][currentStep] }}</span>
+  </div>
+  <div class="grid grid-cols-4 gap-1 mt-2.5">
+    <span v-for="n in 4" :key="n" class="h-[3px] rounded-full transition-colors duration-700" :class="n - 1 <= currentStep ? 'bg-ink' : 'bg-line'"></span>
+  </div>
+</div>
